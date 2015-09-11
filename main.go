@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -58,11 +59,17 @@ func start(name string) {
 
 	cmd := exec.Command(kvm, vmconfig.makeArgs()...)
 
+	var out, errout bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errout
+
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println("run fail", err)
+		fmt.Println(errout.String())
 		return
 	}
+	fmt.Println(out.String())
 
 }
 func createImage(name, size string) {
@@ -76,11 +83,18 @@ func createImage(name, size string) {
 	fmt.Println("use qemu-img in", imgtool)
 
 	cmd := exec.Command(imgtool, "create", "-f", "qcow2", "-o", "size="+size, name)
+
+	var out, errout bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errout
+
 	err := cmd.Run()
 	if err != nil {
 		fmt.Println("create fail", err)
+		fmt.Println(errout.String())
 		return
 	}
+	fmt.Println(out.String())
 }
 func help() {
 	fmt.Println("Usage:")
