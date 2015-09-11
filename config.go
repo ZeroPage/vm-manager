@@ -30,21 +30,18 @@ func (vm VmConfig) makeArgs() []string {
 		fmt.Println("CPU must be >= 1")
 		os.Exit(-2)
 	}
-	args = append(args, "-smp")
-	args = append(args, strconv.Itoa(vm.CPU))
+	args = append(args, "-smp", strconv.Itoa(vm.CPU))
 
 	if vm.Memory == "" {
 		fmt.Println("Memory must be exist")
 		os.Exit(-2)
 	}
-	args = append(args, "-m")
-	args = append(args, vm.Memory)
+	args = append(args, "-m", vm.Memory)
 
 	if vm.Disk.Path == "" {
 		fmt.Println("Disk Must Exist")
 		os.Exit(-2)
 	}
-	args = append(args, "-drive")
 	args = append(args, vm.Disk.makeArgs()...)
 
 	args = append(args, "-daemonize")
@@ -57,13 +54,15 @@ func (vm VmConfig) makeArgs() []string {
 	args = append(args, vm.Network.makeArgs()...)
 
 	if vm.VGA != "" {
-		args = append(args, "-vga")
-		args = append(args, vm.VGA)
+		args = append(args, "-vga", vm.VGA)
 	}
 
 	if vm.VNC != "" {
-		args = append(args, "-vnc")
-		args = append(args, vm.VNC)
+		args = append(args, "-vnc", vm.VNC)
+	}
+
+	if vm.CdRom != "" {
+		args = append(args, "-cdrom", vm.CdRom)
 	}
 
 	return args
@@ -96,6 +95,7 @@ func (dc DiskConfig) makeArgs() (args []string) {
 	if dc.Interface != "" {
 		arg += ",if=" + dc.Interface
 	}
+	args = append(args, "-drive")
 	args = append(args, arg)
 	return
 }

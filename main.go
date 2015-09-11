@@ -56,7 +56,6 @@ func start(name string) {
 		os.Exit(-1)
 	}
 
-	fmt.Println(vmconfig.makeArgs())
 	cmd := exec.Command(kvm, vmconfig.makeArgs()...)
 
 	err := cmd.Run()
