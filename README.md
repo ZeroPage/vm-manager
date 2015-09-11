@@ -29,7 +29,7 @@ And make config file like below.
 #config.yaml
 
 vm:
-	- example-vm
+	example-vm :
 		cpu : 1
 		memory : 2G
 		disk :
