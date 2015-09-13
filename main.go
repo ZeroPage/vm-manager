@@ -36,12 +36,15 @@ func main() {
 
 func start(name string) {
 	//usr/local/bin/qemu-kvm
-	//	-m 8G -smp 2
-	//	-drive file=bluemir-windows.img,if=virtio
-	//	-daemonize -vga std
-	//	-net nic,macaddr=DA:ED:DE:EF:0F:05
-	//	-net tap,ifname=vnet5,script=/etc/kvm-ifup,downscript=/etc/kvm-ifdown
+	//  -m 8G -smp 2
+	//  -drive file=bluemir-windows.img,if=virtio,media=disk
+	//  -drive file=aaad,media=cdrom,index=2
+	//  -daemonize
+	//  -vga std
+	//  -net nic,macaddr=DA:ED:DE:EF:0F:05
+	//  -net tap,ifname=vnet5,script=/etc/kvm-ifup,downscript=/etc/kvm-ifdown
 	kvm, lookErr := exec.LookPath("qemu-kvm")
+	//kvm, lookErr := exec.LookPath("qemu-kvm")
 	if lookErr != nil {
 		fmt.Println("command not found : qemu-kvm")
 		return

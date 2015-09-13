@@ -9,28 +9,26 @@ import (
 )
 
 type Config struct {
-	VM map[string]VmConfig
+	VM      map[string]VmConfig
+	LogPath string
 }
 
 type VmConfig struct {
-	CPU     int
+	CPU     CPUConfig
 	Memory  string
 	Network NetworkConfig
-	Logfile string
-	Disk    DiskConfig //TODO multiple Disk
-	CdRom   string
+	LogFile string
+	Disks   []DiskConfig //TODO multiple Disk
+	CdRoms  []CDRomConfig
 	VGA     string
 	VNC     string
+	Others  []string
 }
 
 func (vm VmConfig) makeArgs() []string {
 	var args []string
 
-	if vm.CPU == 0 {
-		fmt.Println("CPU must be >= 1")
-		os.Exit(-2)
-	}
-	args = append(args, "-smp", strconv.Itoa(vm.CPU))
+	args = append(args, vm.CPU.makeArgs()...)
 
 	if vm.Memory == "" {
 		fmt.Println("Memory must be exist")
@@ -38,20 +36,18 @@ func (vm VmConfig) makeArgs() []string {
 	}
 	args = append(args, "-m", vm.Memory)
 
-	if vm.Disk.Path == "" {
-		fmt.Println("Disk Must Exist")
-		os.Exit(-2)
+	for _, disk := range vm.Disks {
+		args = append(args, disk.makeArgs()...)
 	}
-	args = append(args, vm.Disk.makeArgs()...)
 
+	for _, cdrom := range vm.CdRoms {
+		args = append(args, cdrom.makeArgs()...)
+	}
 	args = append(args, "-daemonize")
 
-	if vm.Network.Ifname == "" || vm.Network.MAC == "" {
-		fmt.Println("Network Must Exist")
-		os.Exit(-2)
+	if vm.Network.Ifname != "" || vm.Network.MAC != "" {
+		args = append(args, vm.Network.makeArgs()...)
 	}
-
-	args = append(args, vm.Network.makeArgs()...)
 
 	if vm.VGA != "" {
 		args = append(args, "-vga", vm.VGA)
@@ -61,11 +57,46 @@ func (vm VmConfig) makeArgs() []string {
 		args = append(args, "-vnc", vm.VNC)
 	}
 
-	if vm.CdRom != "" {
-		args = append(args, "-cdrom", vm.CdRom)
-	}
+	args = append(args, vm.Others...)
 
 	return args
+}
+
+type CPUConfig struct {
+	Type        string
+	Core        int
+	Sockets     int
+	VirtualCore int
+	Threads     int
+}
+
+func (cc CPUConfig) makeArgs() (args []string) {
+	if cc.Type != "" {
+		args = append(args, "-cpu", cc.Type)
+	}
+
+	if cc.Core <= 0 {
+		fmt.Println("CPU must be >= 1")
+		os.Exit(-2)
+	}
+
+	var smp string
+	smp += strconv.Itoa(cc.Core)
+
+	fmt.Println(cc)
+
+	if cc.Sockets != 0 {
+		smp += ",sockets=" + strconv.Itoa(cc.Sockets)
+	}
+	if cc.VirtualCore != 0 {
+		smp += ",cores=" + strconv.Itoa(cc.VirtualCore)
+	}
+	if cc.Threads != 0 {
+		smp += ",threads=" + strconv.Itoa(cc.Threads)
+	}
+
+	args = append(args, "-smp", smp)
+	return
 }
 
 type NetworkConfig struct {
@@ -86,30 +117,49 @@ func (nc NetworkConfig) makeArgs() (args []string) {
 type DiskConfig struct {
 	Path      string
 	Interface string
+	Index     int
 }
 
 func (dc DiskConfig) makeArgs() (args []string) {
-	var arg string
-
-	arg += "file=" + dc.Path
-	if dc.Interface != "" {
-		arg += ",if=" + dc.Interface
+	var drive string
+	if dc.Path == "" {
+		fmt.Println("Disk must have path")
+		return
 	}
-	args = append(args, "-drive")
-	args = append(args, arg)
+	drive += "file=" + dc.Path
+
+	if dc.Interface != "" {
+		drive += ",if=" + dc.Interface
+	}
+	if dc.Index != 0 {
+		drive += ",index=" + strconv.Itoa(dc.Index)
+	}
+	drive += ",media=disk"
+	args = append(args, "-drive", drive)
+	return
+}
+
+type CDRomConfig string
+
+func (cdrom CDRomConfig) makeArgs() (args []string) {
+	var drive string
+	drive += "file=" + string(cdrom)
+	drive += ",media=cdrom"
+	drive += ",if=ide"
+	args = append(args, "-drive", drive)
 	return
 }
 
 func readConfig(filename string) *Config {
 	buf, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Println("Connot read config file :", filename)
+		fmt.Println("Connot read config file :", filename, err)
 		os.Exit(-100)
 	}
 	config := &Config{}
 	err = yaml.Unmarshal(buf, config)
 	if err != nil {
-		fmt.Println("Connot parse config file :", filename)
+		fmt.Println("Connot parse config file :", err)
 		os.Exit(-100)
 	}
 	return config
