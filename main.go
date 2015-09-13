@@ -53,6 +53,7 @@ func start(name string) {
 	//  -vga std
 	//  -net nic,macaddr=DA:ED:DE:EF:0F:05
 	//  -net tap,ifname=vnet5,script=/etc/kvm-ifup,downscript=/etc/kvm-ifdown
+
 	//kvm, lookErr := exec.LookPath("echo")
 	kvm, lookErr := exec.LookPath("qemu-kvm")
 	if lookErr != nil {
@@ -64,13 +65,7 @@ func start(name string) {
 
 	config := readConfig(flags.configFile)
 
-	vmconfig, ok := config.VM[name]
-	if !ok {
-		fmt.Println("config not exist!")
-		os.Exit(-1)
-	}
-
-	cmd := exec.Command(kvm, vmconfig.makeArgs()...)
+	cmd := exec.Command(kvm, config.getConfigArgs(name)...)
 
 	var out, errout bytes.Buffer
 	cmd.Stdout = &out

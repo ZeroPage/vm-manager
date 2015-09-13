@@ -5,12 +5,45 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path"
 	"strconv"
 )
 
 type Config struct {
 	VM      map[string]VmConfig
 	LogPath string
+	Pidfile PidConfig
+}
+type PidConfig struct {
+	Path   string
+	Prefix string
+	Suffix string
+}
+
+func (pid PidConfig) getPath(name string) string {
+	return path.Join(pid.Path, pid.Prefix+name+pid.Suffix)
+}
+
+func NewConfig() *Config {
+	return &Config{
+		Pidfile: PidConfig{
+			Path:   "/tmp",
+			Prefix: "vm.",
+			Suffix: ".pid",
+		},
+	}
+}
+
+func (config Config) getConfigArgs(name string) []string {
+	vmconfig, ok := config.VM[name]
+	if !ok {
+		fmt.Println("config not exist!")
+		os.Exit(-1)
+	}
+	args := vmconfig.makeArgs()
+
+	args = append(args, "-pidfile", config.Pidfile.getPath(name))
+	return args
 }
 
 type VmConfig struct {
@@ -28,6 +61,8 @@ type VmConfig struct {
 func (vm VmConfig) makeArgs() []string {
 	var args []string
 
+	args = append(args, "-daemonize")
+
 	args = append(args, vm.CPU.makeArgs()...)
 
 	if vm.Memory == "" {
@@ -43,7 +78,6 @@ func (vm VmConfig) makeArgs() []string {
 	for _, cdrom := range vm.CdRoms {
 		args = append(args, cdrom.makeArgs()...)
 	}
-	args = append(args, "-daemonize")
 
 	if vm.Network.Ifname != "" || vm.Network.MAC != "" {
 		args = append(args, vm.Network.makeArgs()...)
@@ -154,7 +188,7 @@ func readConfig(filename string) *Config {
 		fmt.Println("Connot read config file :", filename, err)
 		os.Exit(-100)
 	}
-	config := &Config{}
+	config := NewConfig()
 	err = yaml.Unmarshal(buf, config)
 	if err != nil {
 		fmt.Println("Connot parse config file :", err)
