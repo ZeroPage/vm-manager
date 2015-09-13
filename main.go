@@ -2,10 +2,16 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 )
+
+var flags = struct {
+	verbose    bool
+	configFile string
+}{}
 
 func main() {
 	//vm start name
@@ -14,23 +20,27 @@ func main() {
 	//vm start-all
 	//vm stop-all
 	//vm help
+	flagParser := flag.NewFlagSet("", flag.ExitOnError)
 
-	if len(os.Args) < 2 {
-		help()
-		return
-	}
+	flagParser.BoolVar(&flags.verbose, "v", false, "verbose option")
+	flagParser.StringVar(&flags.configFile, "c", "config.yaml", "search `directory` for include files")
+	flagParser.Int("test", 0, "set `test`configration")
 
-	switch command := os.Args[1]; command {
+	flagParser.Parse(os.Args[1:])
+
+	switch command := flagParser.Arg(0); command {
 	case "start":
-		if len(os.Args) < 3 {
+		if flagParser.Arg(1) == "" {
 			help()
 			return
 		}
-		start(os.Args[2])
+		start(flagParser.Arg(1))
 	case "img":
-		createImage(os.Args[2], os.Args[3])
+		createImage(flagParser.Arg(1), flagParser.Arg(2))
+	case "":
+		help()
 	default:
-		fmt.Println("Not Implement")
+		fmt.Println("Not Implement", command)
 	}
 }
 
@@ -43,8 +53,8 @@ func start(name string) {
 	//  -vga std
 	//  -net nic,macaddr=DA:ED:DE:EF:0F:05
 	//  -net tap,ifname=vnet5,script=/etc/kvm-ifup,downscript=/etc/kvm-ifdown
+	//kvm, lookErr := exec.LookPath("echo")
 	kvm, lookErr := exec.LookPath("qemu-kvm")
-	//kvm, lookErr := exec.LookPath("qemu-kvm")
 	if lookErr != nil {
 		fmt.Println("command not found : qemu-kvm")
 		return
@@ -52,7 +62,7 @@ func start(name string) {
 
 	fmt.Println("use kvm in", kvm)
 
-	config := readConfig("./config.yaml")
+	config := readConfig(flags.configFile)
 
 	vmconfig, ok := config.VM[name]
 	if !ok {
@@ -101,7 +111,7 @@ func createImage(name, size string) {
 }
 func help() {
 	fmt.Println("Usage:")
-	fmt.Println("\tvm start <name>")
-	fmt.Println("\tvm stop <name>")
-	fmt.Println("\tvm img <image-name> <size>")
+	fmt.Println("  vm start <name>")
+	fmt.Println("  vm stop <name>")
+	fmt.Println("  vm img <image-name> <size>")
 }

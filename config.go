@@ -18,7 +18,7 @@ type VmConfig struct {
 	Memory  string
 	Network NetworkConfig
 	LogFile string
-	Disks   []DiskConfig //TODO multiple Disk
+	Disks   []DiskConfig
 	CdRoms  []CDRomConfig
 	VGA     string
 	VNC     string
@@ -82,8 +82,6 @@ func (cc CPUConfig) makeArgs() (args []string) {
 
 	var smp string
 	smp += strconv.Itoa(cc.Core)
-
-	fmt.Println(cc)
 
 	if cc.Sockets != 0 {
 		smp += ",sockets=" + strconv.Itoa(cc.Sockets)
