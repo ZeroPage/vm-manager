@@ -29,15 +29,31 @@ And make config file like below.
 #config.yaml
 
 vm:
-	example-vm :
-		cpu : 1
-		memory : 2G
-		disk :
-			path : example.img
-		network :
-			mac : DE:AD:BE:EF:00:01
-			ifname : vnet1
-		cdrom : your-os-install-image-file.iso
+    example:
+        cpu :
+            core : 1
+        memory : 512M
+        disks :
+            - path: example-hda.img
+              interface: virtio
+            - path: example-hdb.img
+        network :
+            ifname : vnet1
+            mac: DE:AD:BE:EF:00:01
+        logfile: test.log
+        cdroms :
+            - example-install.iso
+        vnc : :10
+        others :
+            - -usb
+            - -name
+            - example
+    example-non-network:
+        cpu :
+            type : host
+            core : 2
+            virtualcore : 1
+        memory : 2G
 ```
 
 To make disk image file, excute below line
@@ -47,6 +63,6 @@ vm-manager img example.img 50G
 
 Then, you can check image file maked, and you can run your vm :
 ```
-vm-manager start example-vm
+vm-manager start example
 ```
 
