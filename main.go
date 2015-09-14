@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -35,6 +36,12 @@ func main() {
 			return
 		}
 		start(flagParser.Arg(1))
+	case "stop":
+		if flagParser.Arg(1) == "" {
+			help()
+			return
+		}
+		stop(flagParser.Arg(1))
 	case "img":
 		createImage(flagParser.Arg(1), flagParser.Arg(2))
 	case "":
@@ -80,6 +87,38 @@ func start(name string) {
 	fmt.Println(out.String())
 
 }
+func stop(name string) {
+	kill, lookErr := exec.LookPath("kill")
+	if lookErr != nil {
+		fmt.Println("command not found : kill")
+		return
+	}
+
+	config := readConfig(flags.configFile)
+
+	path := config.Pidfile.getPath(name)
+
+	pid, err := ioutil.ReadFile(path)
+	if err != nil {
+		fmt.Println("connot read pid file", err)
+		return
+	}
+
+	cmd := exec.Command(kill, string(pid))
+
+	var out, errout bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &errout
+
+	err = cmd.Run()
+	if err != nil {
+		fmt.Println("create fail", err)
+		fmt.Println(errout.String())
+		return
+	}
+
+	fmt.Println(out.String())
+}
 func createImage(name, size string) {
 	//qemu-img create -f qcow2 -o size=200G bluemir-windows.img
 	imgtool, lookErr := exec.LookPath("qemu-img")
@@ -97,6 +136,7 @@ func createImage(name, size string) {
 	cmd.Stderr = &errout
 
 	err := cmd.Run()
+
 	if err != nil {
 		fmt.Println("create fail", err)
 		fmt.Println(errout.String())
