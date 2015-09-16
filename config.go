@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
@@ -37,7 +36,7 @@ func NewConfig() *Config {
 func (config Config) getConfigArgs(name string) []string {
 	vmconfig, ok := config.VM[name]
 	if !ok {
-		fmt.Println("config not exist!")
+		L.ERR("config not exist!")
 		os.Exit(-1)
 	}
 	args := vmconfig.makeArgs()
@@ -66,7 +65,7 @@ func (vm VmConfig) makeArgs() []string {
 	args = append(args, vm.CPU.makeArgs()...)
 
 	if vm.Memory == "" {
-		fmt.Println("Memory must be exist")
+		L.ERR("Memory must be exist")
 		os.Exit(-2)
 	}
 	args = append(args, "-m", vm.Memory)
@@ -110,7 +109,7 @@ func (cc CPUConfig) makeArgs() (args []string) {
 	}
 
 	if cc.Core <= 0 {
-		fmt.Println("CPU must be >= 1")
+		L.ERR("CPU must be >= 1")
 		os.Exit(-2)
 	}
 
@@ -155,7 +154,7 @@ type DiskConfig struct {
 func (dc DiskConfig) makeArgs() (args []string) {
 	var drive string
 	if dc.Path == "" {
-		fmt.Println("Disk must have path")
+		L.WARN("Disk must have path - skip disk")
 		return
 	}
 	drive += "file=" + dc.Path
@@ -185,13 +184,13 @@ func (cdrom CDRomConfig) makeArgs() (args []string) {
 func readConfig(filename string) *Config {
 	buf, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Println("Connot read config file :", filename, err)
+		L.ERR("Connot read config file :", filename, err)
 		os.Exit(-100)
 	}
 	config := NewConfig()
 	err = yaml.Unmarshal(buf, config)
 	if err != nil {
-		fmt.Println("Connot parse config file :", err)
+		L.ERR("Connot parse config file :", err)
 		os.Exit(-100)
 	}
 	return config

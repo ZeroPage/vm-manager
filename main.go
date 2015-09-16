@@ -29,6 +29,8 @@ func main() {
 
 	flagParser.Parse(os.Args[1:])
 
+	L.Verbose(flags.verbose)
+
 	switch command := flagParser.Arg(0); command {
 	case "start":
 		if flagParser.Arg(1) == "" {
@@ -47,7 +49,7 @@ func main() {
 	case "":
 		help()
 	default:
-		fmt.Println("Not Implement", command)
+		L.WARN("Not Implement", command)
 	}
 }
 
@@ -64,11 +66,11 @@ func start(name string) {
 	//kvm, lookErr := exec.LookPath("echo")
 	kvm, lookErr := exec.LookPath("qemu-kvm")
 	if lookErr != nil {
-		fmt.Println("command not found : qemu-kvm")
+		L.ERR("command not found : qemu-kvm")
 		return
 	}
 
-	fmt.Println("use kvm in", kvm)
+	L.DEBUG("use kvm in", kvm)
 
 	config := readConfig(flags.configFile)
 
@@ -80,17 +82,17 @@ func start(name string) {
 
 	err := cmd.Run()
 	if err != nil {
-		fmt.Println("run fail", err)
-		fmt.Println(errout.String())
+		L.ERR("run fail", err)
+		L.ERR(errout.String())
 		return
 	}
-	fmt.Println(out.String())
+	L.INFO(out.String())
 
 }
 func stop(name string) {
 	kill, lookErr := exec.LookPath("kill")
 	if lookErr != nil {
-		fmt.Println("command not found : kill")
+		L.ERR("command not found : kill\n", lookErr)
 		return
 	}
 
@@ -100,7 +102,7 @@ func stop(name string) {
 
 	pid, err := ioutil.ReadFile(path)
 	if err != nil {
-		fmt.Println("connot read pid file", err)
+		L.ERR("connot read pid file\n", err)
 		return
 	}
 
@@ -112,22 +114,22 @@ func stop(name string) {
 
 	err = cmd.Run()
 	if err != nil {
-		fmt.Println("create fail", err)
-		fmt.Println(errout.String())
+		L.ERR("create fail\n", err)
+		L.ERR(errout.String())
 		return
 	}
 
-	fmt.Println(out.String())
+	L.INFO(out.String())
 }
 func createImage(name, size string) {
 	//qemu-img create -f qcow2 -o size=200G bluemir-windows.img
 	imgtool, lookErr := exec.LookPath("qemu-img")
 	if lookErr != nil {
-		fmt.Println("command not found : qemu-img")
+		L.ERR("command not found : qemu-img\n", lookErr)
 		return
 	}
 
-	fmt.Println("use qemu-img in", imgtool)
+	L.DEBUG("use qemu-img in", imgtool)
 
 	cmd := exec.Command(imgtool, "create", "-f", "qcow2", "-o", "size="+size, name)
 
@@ -138,11 +140,11 @@ func createImage(name, size string) {
 	err := cmd.Run()
 
 	if err != nil {
-		fmt.Println("create fail", err)
-		fmt.Println(errout.String())
+		L.ERR("create fail\n", err)
+		L.ERR(errout.String())
 		return
 	}
-	fmt.Println(out.String())
+	L.ERR(out.String())
 }
 func help() {
 	fmt.Println("Usage:")
