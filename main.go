@@ -66,14 +66,16 @@ func start(name string) {
 	//kvm, lookErr := exec.LookPath("echo")
 	kvm, lookErr := exec.LookPath("qemu-kvm")
 	if lookErr != nil {
-		L.ERR("command not found : qemu-kvm")
+		L.ERR("command not found : qemu-kvm", lookErr)
 		return
 	}
 
 	L.DEBUG("use kvm in", kvm)
 
+	L.DEBUG("use " + flags.configFile + " as config file")
 	config := readConfig(flags.configFile)
 
+	L.DEBUG("find " + name + " config")
 	cmd := exec.Command(kvm, config.getConfigArgs(name)...)
 
 	var out, errout bytes.Buffer
@@ -92,7 +94,7 @@ func start(name string) {
 func stop(name string) {
 	kill, lookErr := exec.LookPath("kill")
 	if lookErr != nil {
-		L.ERR("command not found : kill\n", lookErr)
+		L.ERR("command not found : kill", lookErr)
 		return
 	}
 
@@ -102,7 +104,7 @@ func stop(name string) {
 
 	pid, err := ioutil.ReadFile(path)
 	if err != nil {
-		L.ERR("connot read pid file\n", err)
+		L.ERR("connot read pid file", err)
 		return
 	}
 
@@ -114,7 +116,7 @@ func stop(name string) {
 
 	err = cmd.Run()
 	if err != nil {
-		L.ERR("create fail\n", err)
+		L.ERR("create fail", err)
 		L.ERR(errout.String())
 		return
 	}
@@ -125,7 +127,7 @@ func createImage(name, size string) {
 	//qemu-img create -f qcow2 -o size=200G bluemir-windows.img
 	imgtool, lookErr := exec.LookPath("qemu-img")
 	if lookErr != nil {
-		L.ERR("command not found : qemu-img\n", lookErr)
+		L.ERR("command not found : qemu-img", lookErr)
 		return
 	}
 
@@ -140,7 +142,7 @@ func createImage(name, size string) {
 	err := cmd.Run()
 
 	if err != nil {
-		L.ERR("create fail\n", err)
+		L.ERR("create fail", err)
 		L.ERR(errout.String())
 		return
 	}

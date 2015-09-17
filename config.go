@@ -80,6 +80,8 @@ func (vm VmConfig) makeArgs() []string {
 
 	if vm.Network.Ifname != "" || vm.Network.MAC != "" {
 		args = append(args, vm.Network.makeArgs()...)
+	} else {
+		L.WARN("No network configuration. you connot use network in VM")
 	}
 
 	if vm.VGA != "" {
@@ -104,6 +106,7 @@ type CPUConfig struct {
 }
 
 func (cc CPUConfig) makeArgs() (args []string) {
+	L.DEBUG("make CPU arguments")
 	if cc.Type != "" {
 		args = append(args, "-cpu", cc.Type)
 	}
@@ -127,6 +130,7 @@ func (cc CPUConfig) makeArgs() (args []string) {
 	}
 
 	args = append(args, "-smp", smp)
+	L.DEBUG("CPU options", args)
 	return
 }
 
@@ -136,12 +140,14 @@ type NetworkConfig struct {
 }
 
 func (nc NetworkConfig) makeArgs() (args []string) {
+	L.DEBUG("make Network arguments")
 	mac := "nic,macaddr=" + nc.MAC
 
 	ifname := "tap,ifname=" + nc.Ifname
 	ifname += ",script=/etc/kvm-ifup,downscript=/etc/kvm-ifdown"
 
 	args = append(args, "-net", mac, "-net", ifname)
+	L.DEBUG("Network options", args)
 	return
 }
 
@@ -152,6 +158,7 @@ type DiskConfig struct {
 }
 
 func (dc DiskConfig) makeArgs() (args []string) {
+	L.DEBUG("make Disk arguments")
 	var drive string
 	if dc.Path == "" {
 		L.WARN("Disk must have path - skip disk")
@@ -167,27 +174,32 @@ func (dc DiskConfig) makeArgs() (args []string) {
 	}
 	drive += ",media=disk"
 	args = append(args, "-drive", drive)
+	L.DEBUG("Disk options", args)
 	return
 }
 
 type CDRomConfig string
 
 func (cdrom CDRomConfig) makeArgs() (args []string) {
+	L.DEBUG("make CDRom arguments")
 	var drive string
 	drive += "file=" + string(cdrom)
 	drive += ",media=cdrom"
 	drive += ",if=ide"
 	args = append(args, "-drive", drive)
+	L.DEBUG("CDRom options", args)
 	return
 }
 
 func readConfig(filename string) *Config {
+	L.DEBUG("read file :", filename)
 	buf, err := ioutil.ReadFile(filename)
 	if err != nil {
 		L.ERR("Connot read config file :", filename, err)
 		os.Exit(-100)
 	}
 	config := NewConfig()
+	L.DEBUG("try to parse yaml")
 	err = yaml.Unmarshal(buf, config)
 	if err != nil {
 		L.ERR("Connot parse config file :", err)
