@@ -1,8 +1,8 @@
-#VM Manager
+# VM Manager
 
 This tool based on [Qemu & KVM guide #1](http://www.slideshare.net/baramdori/qemu-kvm-guide-1-intro-basic)
 
-##How to install & use
+## How to install & use
 
 First, install go
 
